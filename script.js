@@ -1,63 +1,46 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const API_URL = "https://form-backend-me7c.onrender.com/api/form/forms";
+document.addEventListener("DOMContentLoaded", () => {
+  const loginForm = document.getElementById("login-form");
+  const messageDiv = document.getElementById("message");
 
-  try {
-    const res = await fetch(API_URL);
-    const forms = await res.json();
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    // Populate table
-    const tableBody = document.querySelector("#messagesTable tbody");
-    forms.forEach((form) => {
-      const row = `
-        <tr>
-          <td>${form.name}</td>
-          <td>${form.email}</td>
-          <td>${form.message}</td>
-          <td>${new Date(form.createdAt).toLocaleString()}</td>
-        </tr>
-      `;
-      tableBody.insertAdjacentHTML("beforeend", row);
-    });
+      messageDiv.textContent = "Logging in...";
+      messageDiv.style.color = "#333";
 
-    // Prepare chart data
-    const countsByDate = {};
-    forms.forEach((form) => {
-      const date = new Date(form.createdAt).toLocaleDateString();
-      countsByDate[date] = (countsByDate[date] || 0) + 1;
-    });
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
 
-    const labels = Object.keys(countsByDate);
-    const data = Object.values(countsByDate);
-
-    // Create Chart.js chart
-    new Chart(document.getElementById("submissionsChart"), {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
+      try {
+        const response = await fetch(
+          "https://form-backend-me7c.onrender.com/api/admin/login",
           {
-            label: "Submissions per Day",
-            data,
-            borderColor: "#dc3545",
-            backgroundColor: "rgba(220, 53, 69, 0.3)",
-            tension: 0.3,
-            fill: true,
-            pointBackgroundColor: "#dc3545",
-            pointRadius: 4,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: true },
-        },
-        scales: {
-          y: { beginAtZero: true },
-        },
-      },
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, password }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (response.ok) {
+          messageDiv.textContent = "Login successful! Redirecting...";
+          messageDiv.style.color = "green";
+          // === CHANGE THIS LINE ===
+          window.location.href = "dashboard.html";
+        } else {
+          messageDiv.textContent =
+            data.message || "Invalid username or password.";
+          messageDiv.style.color = "red";
+        }
+      } catch (error) {
+        messageDiv.textContent = "Network error. Please try again.";
+        messageDiv.style.color = "red";
+        console.error("Login error:", error);
+      }
     });
-  } catch (error) {
-    console.error("Error loading dashboard data:", error);
   }
 });
